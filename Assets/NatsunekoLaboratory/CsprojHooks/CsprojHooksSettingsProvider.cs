@@ -28,26 +28,7 @@ namespace NatsunekoLaboratory.CsprojHooks
             return new CsprojHooksSettingsProvider("Project/Editor/Csproj Hooks", SettingsScope.Project, new[] { "C#", "csproj", "Roslyn", "Analyzer" });
         }
 
-        public override void OnActivate(string searchContext, VisualElement rootElement)
-        {
-            foreach (var feature in CsprojHooksAssetPreprocessor.Features)
-                if (feature is ICsprojHooksConfigurableFeature configurable)
-                {
-                    if (CsprojHooksSettingsStore.Instance.Store.ContainsKey(configurable.Id))
-                    {
-                        var json = CsprojHooksSettingsStore.Instance.Store[configurable.Id];
-                        var obj = JsonUtility.FromJson(json, configurable.T);
-                        configurable.Initialize(obj, () => SaveConfiguration(configurable.Id, obj));
-                    }
-                    else
-                    {
-                        var obj = Activator.CreateInstance(configurable.T);
-                        CsprojHooksSettingsStore.Instance.Store[configurable.Id] = JsonUtility.ToJson(obj);
-
-                        configurable.Initialize(obj, () => SaveConfiguration(configurable.Id, obj));
-                    }
-                }
-        }
+        public override void OnActivate(string searchContext, VisualElement rootElement) { }
 
         public override void OnDeactivate()
         {
@@ -104,12 +85,6 @@ namespace NatsunekoLaboratory.CsprojHooks
                     }
                 }
             }
-        }
-
-        private static void SaveConfiguration(string id, object obj)
-        {
-            CsprojHooksSettingsStore.Instance.Store[id] = JsonUtility.ToJson(obj);
-            CsprojHooksSettingsStore.Instance.Save();
         }
     }
 }

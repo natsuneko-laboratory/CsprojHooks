@@ -11,6 +11,8 @@ using NatsunekoLaboratory.CsprojHooks.Features.Abstractions;
 
 using UnityEditor;
 
+using UnityEngine;
+
 namespace NatsunekoLaboratory.CsprojHooks
 {
     public class CsprojHooksAssetPreprocessor : AssetPostprocessor
@@ -22,6 +24,24 @@ namespace NatsunekoLaboratory.CsprojHooks
         static CsprojHooksAssetPreprocessor()
         {
             InternalFeatures = CollectFeatures();
+
+            foreach (var feature in Features)
+                if (feature is ICsprojHooksConfigurableFeature configurable)
+                {
+                    if (CsprojHooksSettingsStore.Instance.Store.ContainsKey(configurable.Id))
+                    {
+                        var json = CsprojHooksSettingsStore.Instance.Store[configurable.Id];
+                        var obj = JsonUtility.FromJson(json, configurable.T);
+                        configurable.Initialize(obj, () => SaveConfiguration(configurable.Id, obj));
+                    }
+                    else
+                    {
+                        var obj = Activator.CreateInstance(configurable.T);
+                        CsprojHooksSettingsStore.Instance.Store[configurable.Id] = JsonUtility.ToJson(obj);
+
+                        configurable.Initialize(obj, () => SaveConfiguration(configurable.Id, obj));
+                    }
+                }
         }
 
         private static List<ICsprojHooksFeature> CollectFeatures()
@@ -43,6 +63,12 @@ namespace NatsunekoLaboratory.CsprojHooks
         private static string OnGeneratedSlnSolution(string path, string content)
         {
             return Features.OfType<ICsprojHooksSlnFeature>().Aggregate(content, (c, w) => w.OnGeneratedSlnSolution(path, c));
+        }
+
+        private static void SaveConfiguration(string id, object obj)
+        {
+            CsprojHooksSettingsStore.Instance.Store[id] = JsonUtility.ToJson(obj);
+            CsprojHooksSettingsStore.Instance.Save();
         }
     }
 }
