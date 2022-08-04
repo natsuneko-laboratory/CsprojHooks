@@ -114,7 +114,7 @@ namespace NatsunekoLaboratory.CsprojHooks.Features
 
         public string OnGeneratedCSProject(string path, string content)
         {
-            if (_configuration == null)
+            if (_configuration == null || _configuration.AddAnalyzerReferencesProjects == null)
                 return content;
 
             if (!_configuration.AddAnalyzerReferencesProjects.Contains(path))
